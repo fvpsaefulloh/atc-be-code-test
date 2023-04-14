@@ -8,7 +8,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.SortedMap;
+import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -21,5 +22,5 @@ public class UserResponse {
     private UserDto userData;
 
     @JsonProperty("user_settings")
-    private SortedMap<String, String> userSettings;
+    private List<Map<String, String>> userSettings;
 }

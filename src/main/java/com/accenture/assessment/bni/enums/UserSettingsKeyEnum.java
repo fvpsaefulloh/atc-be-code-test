@@ -29,4 +29,13 @@ public enum UserSettingsKeyEnum {
     public Class getClassType() {
         return classType;
     }
+
+    public static UserSettingsKeyEnum of(String name) {
+        for (UserSettingsKeyEnum userSettingsKeyEnum : values()) {
+            if (userSettingsKeyEnum.getName().equalsIgnoreCase(name)) {
+                return userSettingsKeyEnum;
+            }
+        }
+        throw new IllegalArgumentException("User settings key doesn't exist");
+    }
 }

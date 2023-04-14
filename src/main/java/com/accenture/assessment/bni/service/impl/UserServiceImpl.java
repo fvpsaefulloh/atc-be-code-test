@@ -12,14 +12,15 @@ import com.accenture.assessment.bni.repository.UserRepository;
 import com.accenture.assessment.bni.repository.custom.UserCustomRepository;
 import com.accenture.assessment.bni.service.UserService;
 import com.accenture.assessment.bni.service.UserSettingService;
+import com.querydsl.core.BooleanBuilder;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.ZonedDateTime;
-import java.util.List;
-import java.util.SortedMap;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,35 +32,118 @@ public class UserServiceImpl implements UserService {
     private final static QUser qUser = QUser.user;
 
     @Override
+    @Transactional
     public UserResponse save(UserRequest request) {
         User user = mapper.fromRequestToEntity(request);
         user.setCreatedTime(ZonedDateTime.now());
         user.setUpdatedTime(ZonedDateTime.now());
         repository.save(user);
-
-        List<UserSetting> userSettings = userSettingService.save(user.getId());
-        UserResponse userResponse = new UserResponse(mapper.toDto(user), convertUserSettingsToMap(userSettings));
-        return userResponse;
+        List<UserSetting> userSettings =  userSettingService.save(user.getId());
+        UserResponse response = new UserResponse(mapper.toDto(user), convertUserSettingsToMap(userSettings));
+        return response;
     }
 
     @Override
+    public UserResponse update(UserRequest request, Long id) {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qUser.isActive.isTrue()).and(qUser.id.eq(id));
+        User user = getOne(builder);
+        user.setBirthDate(request.getBirthDate());
+        user.setFirstName(request.getFirstName());
+        user.setFamilyName(request.getLastName());
+        user.setUpdatedTime(ZonedDateTime.now());
+        repository.save(user);
+        return getUserResponse(user);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public UserResponse getUser(Long id) {
-        User user = repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Id tidak ditemukan"));
-        List<UserSetting> userSettings = userSettingService.getByUserId(user.getId());
-        return new UserResponse(mapper.toDto(user),
-                convertUserSettingsToMap(userSettings));
+        User user = getActiveUserById(id);
+        return getUserResponse(user) ;
     }
 
     @Override
-    public UserPagedResponse getActiveUser(Integer maxRecords, Integer offset) {
+    @Transactional(readOnly = true)
+    public UserPagedResponse getPagedActiveUser(Integer maxRecords, Integer offset) {
         List<UserDto> userDtos = mapper.toDtoList(userCustomRepository.getActiveUser(maxRecords, offset));
         return new UserPagedResponse(userDtos, maxRecords, offset);
     }
 
+    @Override
+    @Transactional
+    public UserResponse activateUser(Long id) {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qUser.isActive.isFalse());
+        builder.and(qUser.id.eq(id));
 
-    private SortedMap<String, String> convertUserSettingsToMap(List<UserSetting> userSettings) {
-        SortedMap<String, String> sortedMap = new TreeMap<>();
-        userSettings.forEach(a -> sortedMap.put(a.getKey(), a.getValue()));
-        return sortedMap;
+        User user = getOne(builder);
+        user.setIsActive(true);
+        user.setUpdatedTime(ZonedDateTime.now());
+        user.setDeletedTime(null);
+        return getUserResponse(user) ;
     }
+
+    @Override
+    @Transactional
+    public void delete(Long id) {
+        User user = getActiveUserById(id);
+        user.setDeletedTime(ZonedDateTime.now());
+        user.setIsActive(false);
+        repository.save(user);
+    }
+
+
+    @Override
+    public List<Map<String, String>> convertUserSettingsToMap(List<UserSetting> userSettings) {
+        List<UserSetting> orderedUserSettings = userSettings.stream()
+                .sorted(Comparator.comparing(a -> a.getKey()))
+                .collect(Collectors.toList());
+
+        List<Map<String, String>> mapList = new ArrayList<>();
+
+        orderedUserSettings.forEach(
+                (data) -> {
+                    Map<String, String> map = new HashMap<>();
+                    map.put(data.getKey(), data.getValue());
+                    mapList.add(map);
+                }
+        );
+
+        return mapList;
+    }
+
+    @Override
+    public UserResponse updateSettings(List<Map<String, Object>> settings, Long userId) {
+        User user = getActiveUserById(userId);
+        List<UserSetting> userSettings = userSettingService.update(settings, userId);
+        user.setUpdatedTime(ZonedDateTime.now());
+        repository.save(user);
+        return getUserResponse(user, userSettings);
+    }
+
+    private User getOne(BooleanBuilder builder) {
+        User user = repository.findOne(builder)
+                .orElseThrow(() -> new EntityNotFoundException("Data not found"));
+        return user;
+    }
+
+    private UserResponse getUserResponse(User user) {
+        List<UserSetting> userSettings = userSettingService.getByUserId(user.getId());
+        UserResponse userResponse = getUserResponse(user, userSettings);
+        return userResponse;
+    }
+
+    private UserResponse getUserResponse(User user, List<UserSetting> userSettings) {
+        UserResponse userResponse = new UserResponse(mapper.toDto(user), convertUserSettingsToMap(userSettings));
+        return userResponse;
+    }
+
+    private User getActiveUserById(Long id) {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qUser.isActive.isTrue()).and(qUser.id.eq(id));
+        User user = getOne(builder);
+        return user;
+    }
+
 }
