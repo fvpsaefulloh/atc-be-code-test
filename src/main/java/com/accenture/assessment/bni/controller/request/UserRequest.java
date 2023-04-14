@@ -1,5 +1,6 @@
 package com.accenture.assessment.bni.controller.request;
 
+import com.accenture.assessment.bni.configuration.validator.BirthDateValidation;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -30,5 +31,6 @@ public class UserRequest {
 
     @NotNull
     @JsonProperty("birth_date")
+    @BirthDateValidation()
     private LocalDate birthDate;
 }
