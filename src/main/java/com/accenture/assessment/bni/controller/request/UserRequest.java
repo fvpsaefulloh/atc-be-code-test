@@ -15,7 +15,7 @@ import java.time.LocalDate;
 public class UserRequest {
     @NotEmpty
     @Size(max = 16)
-    @Pattern(regexp = "^[0-9]$", message = "Must be number")
+    @Pattern(regexp = "^[0-9]+$", message = "Must be number")
     private String ssn;
 
     @Size(min = 3, max = 100)

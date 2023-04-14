@@ -1,5 +1,6 @@
 package com.accenture.assessment.bni.service.impl;
 
+import com.accenture.assessment.bni.configuration.InvalidValueException;
 import com.accenture.assessment.bni.controller.request.UserRequest;
 import com.accenture.assessment.bni.controller.response.UserPagedResponse;
 import com.accenture.assessment.bni.controller.response.UserResponse;
@@ -19,6 +20,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -37,6 +39,7 @@ public class UserServiceImpl implements UserService {
     public UserResponse save(UserRequest request) {
         User user = mapper.fromRequestToEntity(request);
         checkIfSsnAlreadyExist(user.getSsn());
+        validateAge(user.getBirthDate());
         user.setCreatedTime(ZonedDateTime.now());
         user.setUpdatedTime(ZonedDateTime.now());
         repository.save(user);
@@ -62,6 +65,7 @@ public class UserServiceImpl implements UserService {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(qUser.isActive.isTrue()).and(qUser.id.eq(id));
         User user = getOne(builder, id);
+        validateAge(user.getBirthDate());
         user.setBirthDate(request.getBirthDate());
         user.setFirstName(request.getFirstName());
         user.setFamilyName(request.getLastName());
@@ -160,4 +164,10 @@ public class UserServiceImpl implements UserService {
         return user;
     }
 
+    private void validateAge(LocalDate dob) {
+        LocalDate yearMinus100 = LocalDate.now().minusYears(100);
+        if (dob.isBefore(yearMinus100)) {
+            throw new InvalidValueException("birth_date", dob.toString());
+        }
+    }
 }
