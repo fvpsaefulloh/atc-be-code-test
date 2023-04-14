@@ -15,6 +15,7 @@ import com.accenture.assessment.bni.service.UserSettingService;
 import com.querydsl.core.BooleanBuilder;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse save(UserRequest request) {
         User user = mapper.fromRequestToEntity(request);
+        checkIfSsnAlreadyExist(user.getSsn());
         user.setCreatedTime(ZonedDateTime.now());
         user.setUpdatedTime(ZonedDateTime.now());
         repository.save(user);
@@ -43,11 +45,23 @@ public class UserServiceImpl implements UserService {
         return response;
     }
 
+    private void checkIfSsnAlreadyExist(String ssn) {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qUser.ssn.eq(ssn));
+
+        repository.findOne(builder)
+                .ifPresent(
+                    s -> {
+                        throw new DataIntegrityViolationException(String
+                                .format("Record with unique value %s already exists in the system", ssn));
+                    });
+    }
+
     @Override
     public UserResponse update(UserRequest request, Long id) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(qUser.isActive.isTrue()).and(qUser.id.eq(id));
-        User user = getOne(builder);
+        User user = getOne(builder, id);
         user.setBirthDate(request.getBirthDate());
         user.setFirstName(request.getFirstName());
         user.setFamilyName(request.getLastName());
@@ -77,7 +91,7 @@ public class UserServiceImpl implements UserService {
         builder.and(qUser.isActive.isFalse());
         builder.and(qUser.id.eq(id));
 
-        User user = getOne(builder);
+        User user = getOne(builder, id);
         user.setIsActive(true);
         user.setUpdatedTime(ZonedDateTime.now());
         user.setDeletedTime(null);
@@ -122,9 +136,9 @@ public class UserServiceImpl implements UserService {
         return getUserResponse(user, userSettings);
     }
 
-    private User getOne(BooleanBuilder builder) {
+    private User getOne(BooleanBuilder builder, Long id) {
         User user = repository.findOne(builder)
-                .orElseThrow(() -> new EntityNotFoundException("Data not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Cannot find resource with id " + id));
         return user;
     }
 
@@ -142,7 +156,7 @@ public class UserServiceImpl implements UserService {
     private User getActiveUserById(Long id) {
         BooleanBuilder builder = new BooleanBuilder();
         builder.and(qUser.isActive.isTrue()).and(qUser.id.eq(id));
-        User user = getOne(builder);
+        User user = getOne(builder, id);
         return user;
     }
 

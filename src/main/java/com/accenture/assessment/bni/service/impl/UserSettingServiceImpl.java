@@ -1,5 +1,6 @@
 package com.accenture.assessment.bni.service.impl;
 
+import com.accenture.assessment.bni.configuration.InvalidValueException;
 import com.accenture.assessment.bni.entity.QUserSetting;
 import com.accenture.assessment.bni.entity.UserSetting;
 import com.accenture.assessment.bni.enums.UserSettingsKeyEnum;
@@ -58,7 +59,7 @@ public class UserSettingServiceImpl implements UserSettingService {
                                     userSetting.setValue(String.valueOf(v));
                                     repository.save(userSetting);
                                 } else {
-                                    throw new IllegalArgumentException("Value cannot be null");
+                                    throw new InvalidValueException(k, v.toString());
                                 }
                             }
                         }
@@ -73,11 +74,11 @@ public class UserSettingServiceImpl implements UserSettingService {
         UserSettingsKeyEnum userSettingsKeyEnum = UserSettingsKeyEnum.of(k);
         if (!userSettingsKeyEnum.equals(UserSettingsKeyEnum.WIDGET_ORDER) && userSettingsKeyEnum.getClassType().equals(Boolean.class)) {
             if (!v.toString().equalsIgnoreCase(Boolean.FALSE.toString()) && !v.toString().equalsIgnoreCase(Boolean.TRUE.toString()) ) {
-                throw new IllegalArgumentException("Invalid value " + v.toString());
+                throw new InvalidValueException(k, v.toString());
             }
         } else {
             if (!Pattern.matches("^[1-5](,[1-5])*$", v.toString())) {
-                throw new IllegalArgumentException("Invalid value " + v.toString());
+                throw new InvalidValueException(k, v.toString());
             }
         }
     }

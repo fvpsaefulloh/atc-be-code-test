@@ -1,10 +1,12 @@
 package com.accenture.assessment.bni.dto;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 
 @Getter
 @Setter
@@ -15,8 +17,12 @@ public class UserDto {
     private String firstName;
     private String lastName;
     private LocalDate birthDate;
-    private String createdTime;
-    private String updatedTime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
+    private ZonedDateTime createdTime;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ssXXX")
+    private ZonedDateTime updatedTime;
     private String createdBy;
     private String updatedBy;
     private Boolean isActive;

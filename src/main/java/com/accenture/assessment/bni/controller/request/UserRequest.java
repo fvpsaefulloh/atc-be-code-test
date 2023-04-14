@@ -20,11 +20,12 @@ public class UserRequest {
 
     @Size(min = 3, max = 100)
     @JsonProperty("first_name")
-    @Pattern(regexp = "^[a-zA-Z0-9]$", message = "Can't contain special character")
+    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Can't contain special character")
     private String firstName;
 
     @Size(min = 3, max = 100)
     @JsonProperty("last_name")
+    @Pattern(regexp = "^[a-zA-Z0-9]+$", message = "Can't contain special character")
     private String lastName;
 
     @NotNull
