@@ -96,8 +96,7 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    @Override
-    public List<Map<String, String>> convertUserSettingsToMap(List<UserSetting> userSettings) {
+    private List<Map<String, String>> convertUserSettingsToMap(List<UserSetting> userSettings) {
         List<UserSetting> orderedUserSettings = userSettings.stream()
                 .sorted(Comparator.comparing(a -> a.getKey()))
                 .collect(Collectors.toList());
@@ -105,11 +104,11 @@ public class UserServiceImpl implements UserService {
         List<Map<String, String>> mapList = new ArrayList<>();
 
         orderedUserSettings.forEach(
-                (data) -> {
-                    Map<String, String> map = new HashMap<>();
-                    map.put(data.getKey(), data.getValue());
-                    mapList.add(map);
-                }
+            (data) -> {
+                Map<String, String> map = new HashMap<>();
+                map.put(data.getKey(), data.getValue());
+                mapList.add(map);
+            }
         );
 
         return mapList;

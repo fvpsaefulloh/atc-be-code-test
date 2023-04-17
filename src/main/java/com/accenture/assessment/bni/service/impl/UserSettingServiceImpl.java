@@ -33,14 +33,14 @@ public class UserSettingServiceImpl implements UserSettingService {
         List<UserSetting> userSettings = new ArrayList<>();
 
         userSettingsKeyEnums.forEach(
-                (e) -> {
-                    UserSetting userSetting = new UserSetting();
-                    userSetting.setUserId(userId);
-                    userSetting.setKey(e.getName());
-                    userSetting.setValue(e.getDefaultValue());
-                    repository.save(userSetting);
-                    userSettings.add(userSetting);
-                }
+            (e) -> {
+                UserSetting userSetting = new UserSetting();
+                userSetting.setUserId(userId);
+                userSetting.setKey(e.getName());
+                userSetting.setValue(e.getDefaultValue());
+                repository.save(userSetting);
+                userSettings.add(userSetting);
+            }
         );
         return userSettings;
     }
@@ -92,6 +92,5 @@ public class UserSettingServiceImpl implements UserSettingService {
         List<UserSetting> userSettings = (List<UserSetting>) repository.findAll(booleanBuilder);
         return userSettings;
     }
-
-
+    
 }
