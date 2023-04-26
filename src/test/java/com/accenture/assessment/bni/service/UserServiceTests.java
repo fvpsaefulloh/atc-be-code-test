@@ -14,12 +14,15 @@ import com.accenture.assessment.bni.repository.UserRepository;
 import com.accenture.assessment.bni.repository.custom.UserCustomRepository;
 import com.accenture.assessment.bni.service.impl.UserServiceImpl;
 import com.querydsl.core.BooleanBuilder;
+import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
@@ -197,20 +200,46 @@ public class UserServiceTests {
         when(repository.findOne(builder)).thenReturn(Optional.of(user));
         ZonedDateTime current = ZonedDateTime.now();
 
-
         UserResponse userResponse = userService.updateSettings(getUserSettingsForUpdate(), id);
 
         assertEquals(true, current.isBefore(userResponse.getUserData().getUpdatedTime()));
     }
 
+    @Test
+    public void whenSaveUserWithSsnThatAlreadyExistThenThrowException() {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qUser.ssn.eq(user.getSsn()));
+
+        when(repository.findOne(builder)).thenReturn(Optional.of(user));
+
+        DataIntegrityViolationException exception = Assertions
+                .assertThrows(DataIntegrityViolationException.class, ()  -> userService.save(userRequest));
+        Assertions.assertNotNull(exception);
+        assertEquals(true, exception.getMessage().contains("already exists in the system"));
+
+    }
+
+    @Test
+    public void whenGetUserThatDoesNotExistThenThrowException() {
+        BooleanBuilder builder = new BooleanBuilder();
+        builder.and(qUser.isActive.isTrue()).and(qUser.id.eq(user.getId()));
+        when(repository.findOne(builder)).thenReturn(Optional.of(user));
+
+        EntityNotFoundException exception = Assertions
+                .assertThrows(EntityNotFoundException.class, () -> userService.getUser(99L));
+
+        Assertions.assertNotNull(exception);
+        assertEquals(true, exception.getMessage().contains("Cannot find resource with id"));
+    }
+
     private List<UserSetting> getUserSettingList() {
         List<UserSetting> userSettingList = new ArrayList<>();
         Arrays.asList(UserSettingsKeyEnum.values()).forEach(
-                (val) -> {
-                    UserSetting userSetting = new UserSetting();
-                    userSetting.setKey(val.getName());
-                    userSetting.setValue(val.getDefaultValue());
-                }
+            (val) -> {
+                UserSetting userSetting = new UserSetting();
+                userSetting.setKey(val.getName());
+                userSetting.setValue(val.getDefaultValue());
+            }
         );
         return userSettingList;
     }

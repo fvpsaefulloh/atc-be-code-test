@@ -152,10 +152,10 @@ public class UserServiceImpl implements UserService {
         builder.and(qUser.ssn.eq(ssn));
 
         repository.findOne(builder)
-                .ifPresent(
-                        s -> {
-                            throw new DataIntegrityViolationException(String
-                                    .format("Record with unique value %s already exists in the system", ssn));
-                        });
+            .ifPresent(
+                s -> {
+                    throw new DataIntegrityViolationException(String
+                            .format("Record with unique value %s already exists in the system", ssn));
+                });
     }
 }
