@@ -115,7 +115,7 @@ public class UserControllerIntegrationTests {
 
     @Test
     @Order(4)
-    public void whenGetPagedUserThenUserListReturned() throws Exception {
+    public void whenGetPagedUserThenUserListReturnedBasedOnMaxRecordsAndOffset() throws Exception {
 
         mockMvc.perform(get("/v1/users?max_records=10&offset=0"))
                 .andDo(print())
@@ -126,6 +126,21 @@ public class UserControllerIntegrationTests {
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.user_data.length()", is(2)));
+
+        mockMvc.perform(get("/v1/users?max_records=10&offset=2"))
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.user_data.length()", is(1)));
+
+        mockMvc.perform(get("/v1/users?max_records=10&offset=3"))
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.user_data.length()", is(0)));
+
+        mockMvc.perform(get("/v1/users?max_records=1&offset=0"))
+                .andDo(print())
+                .andExpect(status().is2xxSuccessful())
+                .andExpect(jsonPath("$.user_data.length()", is(1)));
     }
 
     @Test
@@ -140,7 +155,5 @@ public class UserControllerIntegrationTests {
                 .andDo(print())
                 .andExpect(status().is2xxSuccessful())
                 .andExpect(jsonPath("$.user_data.length()", is(2)));
-
-
     }
 }
